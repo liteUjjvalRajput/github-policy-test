@@ -1,0 +1,33 @@
+name: Enforce Commit Message Tag Format
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  check-commit-message:
+    name: Validate Commit Messages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Check commit message pattern
+        run: |
+          git fetch origin main
+          echo "Checking commit messages..."
+          git log origin/main..HEAD --pretty=format:"%s" > commits.txt
+          cat commits.txt
+
+          REGEX='^[A-Z]{4,}-[0-9]+ .+'
+
+          while read -r line; do
+            if ! [[ "$line" =~ $REGEX ]]; then
+              echo "Invalid commit message: \"$line\""
+              echo "Expected: BEES-1234 Your message here"
+              exit 1
+            fi
+          done < commits.txt
+
+          echo "All commit messages passed!"
