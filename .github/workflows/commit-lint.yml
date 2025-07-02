@@ -7,10 +7,15 @@ on:
       - lite-202305
 
 jobs:
-  check-squash-message:
+  squash-check:
     runs-on: ubuntu-latest
     steps:
-      - name: Get last commit message
+      - name: Checkout full history
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Get merge commit message
         run: |
           msg=$(git log -1 --pretty=format:"%B")
           echo "Commit message:"
