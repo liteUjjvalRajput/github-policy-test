@@ -24,11 +24,11 @@ jobs:
               "Submission approved by"
             ];
 
-            // Check each required field exists and is filled (including "NA")
             const missingFields = requiredFields.filter(field => {
-              const regex = new RegExp(`${field}\\s*(\\S.*)?`, 'i');
+              const regex = new RegExp(`${field.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*:?\\s*(\\S.*)?`, 'i');
               const match = body.match(regex);
-              return !(match && match[1] && match[1].trim().length > 0);
+              const value = match?.[1]?.trim().toLowerCase() || "";
+              return value === "" || value === ":"; // invalid if value is missing or just colon
             });
 
             // Match JIRA ticket like BEES-123, DOSE-4, etc.
@@ -40,5 +40,5 @@ jobs:
             }
 
             if (missingFields.length > 0) {
-              core.setFailed(`Missing or unfilled PR fields:\n\n${missingFields.join('\n')}\n\nEach must be filled out. Use 'NA' if not applicable.`);
+              core.setFailed(`Missing or unfilled PR fields:\n\n${missingFields.join('\n')}\n\nEach must be filled out. Use 'N/A' if not applicable.`);
             }
