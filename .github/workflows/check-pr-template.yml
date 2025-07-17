@@ -1,0 +1,44 @@
+name: Check PR Template Compliance
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+jobs:
+  check-pr-template:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR body for required fields
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.pull_request.body || "";
+
+            const requiredFields = [
+              "Additional Bug(s) or Feature(s) :",
+              "Product(s) :",
+              "Other affected products :",
+              "Built on product(s) :",
+              "Tested on product(s) :",
+              "Tests desc and results :",
+              "Submission approved by"
+            ];
+
+            const missingFields = requiredFields.filter(field => {
+              const regex = new RegExp(`${field.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*:?\\s*(\\S.*)?`, 'i');
+              const match = body.match(regex);
+              const value = match?.[1]?.trim().toLowerCase() || "";
+              return value === "" || value === ":"; // invalid if value is missing or just colon
+            });
+
+            // Match JIRA ticket like BEES-123, DOSE-4, etc.
+            const jiraTicketPattern = /\b[A-Z]+-\d{1,4}\b/i;
+            const hasJiraTicket = jiraTicketPattern.test(body);
+
+            if (!hasJiraTicket) {
+              core.setFailed("PR body must include a JIRA ticket like BEES-123, DOSE-4, etc.");
+            }
+
+            if (missingFields.length > 0) {
+              core.setFailed(`Missing or unfilled PR fields:\n\n${missingFields.join('\n')}\n\nEach must be filled out. Use 'N/A' if not applicable.`);
+            }
